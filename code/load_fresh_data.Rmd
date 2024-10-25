@@ -1,0 +1,182 @@
+---
+title: "Nǀuu"
+date: "Updated: `r format(Sys.Date(), format='%B %d, %Y')`"
+output: 
+  html_document:
+    toc: false
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+# knitr options
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.retina = 4)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+# Libraries
+pacman::p_load(tidyverse, janitor, skimr)
+```
+
+
+# Ethnologue data
+
+```{r}
+# List of ISO 639-3 codes to be replaced with 'zho'
+chinese_dialects <- c('lzh', 'gan', 'hak', 'cdo', 'cjy', 'cmn', 'mnp', 'nan', 'czo', 'cnp', 'csp', 'wuu', 'hsn', 'yue')
+
+# Create a data frame with the EGIDS level, description, and UNESCO labels
+egids_info <- tibble(
+  egids = c("0", "1", "2", "3", "4", "5", "6a", "6b", "7", "8a", "8b", "9", "x10"),
+  label = c(
+    "International", "National", "Regional", "Trade", "Educational", "Written",
+    "Vigorous", "Threatened", "Shifting", "Moribund", "Nearly Extinct", "Dormant", "Extinct"
+  ),
+  description = c(
+    "The language is used internationally for a broad range of functions.",
+    "The language is used in education, work, mass media, government at the nationwide level.",
+    "The language is used for local and regional mass media and governmental services.",
+    "The language is used for local and regional work by both insiders and outsiders.",
+    "Literacy in the language is being transmitted through a system of public education.",
+    "The language is used orally by all generations and is effectively used in written form in parts of the community.",
+    "The language is used orally by all generations and is being learned by children as their first language.",
+    "The language is used orally by all generations but only some of the child-bearing generation are transmitting it to their children.",
+    "The child-bearing generation knows the language well enough to use it among themselves but none are transmitting it to their children.",
+    "The only remaining active speakers of the language are members of the grandparent generation.",
+    "The only remaining speakers of the language are members of the grandparent generation or older who have little opportunity to use the language.",
+    "The language serves as a reminder of heritage identity for an ethnic community. No one has more than symbolic proficiency.",
+    "No one retains a sense of ethnic identity associated with the language, even for symbolic purposes."
+  ),
+  unesco = c(
+    "Safe", "Safe", "Safe", "Safe", "Safe", "Safe",
+    "Safe", "Vulnerable", "Definitely Endangered", 
+    "Severely Endangered", "Critically Endangered", 
+    "Extinct", "Extinct"
+  )
+)
+
+find_mode <- function(x) {
+  x <- na.omit(x)  # Remove NA values
+  ux <- unique(x)
+  if (length(ux) == 0) {
+    return(NA)  # Return NA if all values were missing
+  }
+  ux[which.max(tabulate(match(x, ux)))]
+}
+```
+
+```{r}
+df_pop <-
+  read_tsv("../data/dataverse_files/Table_of_Languages.tab") %>% 
+  clean_names() %>%
+  filter(is_written) %>%
+  mutate(
+    iso_639 = if_else(iso_639 %in% chinese_dialects, 'zho', iso_639),
+    iso_639 = if_else(iso_639 %in% c('prs', 'pes', 'aiq', 'bhh', 'haz', 'jpr', 'phv', 'deh', 'jdt', 'ttt'), 'fas', iso_639),
+    iso_639 = if_else(iso_639 %in% c('arb', 'arq', 'ars', 'ary', 'arz', 'acm', 'acq', 'ajp', 'apc', 'apd', 'aec', 'afb'), 'ara', iso_639),
+    iso_639 = if_else(iso_639 %in% c('ekk', 'vro'), 'est', iso_639),
+    iso_639 = if_else(iso_639 %in% c('ltg', 'lvs'), 'lav', iso_639),
+    iso_639 = if_else(iso_639 %in% c('zsm', 'xmm', 'jak', 'bjn', 'kxd'), 'msa', iso_639),
+    iso_639 = if_else(iso_639 %in% c('azj', 'azb'), 'aze', iso_639),
+    iso_639 = if_else(iso_639 %in% c('als', 'aat'), 'sqi', iso_639),
+    iso_639 = if_else(iso_639 %in% c('dty', 'npi'), 'nep', iso_639),
+    iso_639 = if_else(iso_639 %in% c('uzn', 'uzs'), 'uzb', iso_639),
+    iso_639 = if_else(iso_639 %in% c('khk', 'mvf'), 'mon', iso_639),
+    iso_639 = if_else(iso_639 %in% c('nob'), 'nno', iso_639),
+    iso_639 = if_else(iso_639 %in% c('swh', 'swc'), 'swa', iso_639),
+    iso_639 = if_else(iso_639 %in% c('kmr', 'kur', 'ckb', 'sdh'), 'kur', iso_639),
+    iso_639 = if_else(iso_639 %in% c('ory'), 'ori', iso_639),
+    iso_639 = if_else(iso_639 %in% c('plt', 'txy', 'bjq'), 'mlg', iso_639),
+    iso_639 = if_else(iso_639 %in% c('pst', 'pbu', 'pbt'), 'pus', iso_639),
+    iso_639 = if_else(iso_639 %in% c('ydd', 'yih'), 'yid', iso_639),
+    iso_639 = if_else(iso_639 %in% c('blu', 'hnj'), 'hmn', iso_639),
+    iso_639 = if_else(iso_639 %in% c('bho', 'mai', 'mag'), 'bih', iso_639),
+    iso_639 = if_else(iso_639 %in% c('qub', 'qud', 'quf', 'qug', 'quh'), 'que', iso_639),
+    iso_639 = if_else(iso_639 %in% c('gax', 'gaz', 'hae'), 'orm', iso_639),
+    iso_639 = if_else(iso_639 %in% c('aii', 'syc', 'tru'), 'syr', iso_639),
+    iso_639 = if_else(iso_639 %in% c('ike', 'ipk'), 'iku', iso_639),
+    iso_639 = if_else(iso_639 %in% c('zaa', 'zch', 'zgb'), 'zha', iso_639),
+    iso_639 = if_else(iso_639 %in% c('ayc', 'ayr'), 'aym', iso_639)
+  ) %>%
+  group_by(iso_639) %>% 
+  summarise(
+    name = find_mode(uninverted_name),
+    family = find_mode(family),
+    country = find_mode(country_name),
+    country_code = find_mode(country_code),
+    region = find_mode(region_name),
+    area = find_mode(area),
+    egids = find_mode(egids),
+    lat = mean(latitude, na.rm = TRUE),
+    lon = mean(longitude, na.rm = TRUE),
+    all_users = sum(all_users, na.rm = TRUE),
+    l1_users = sum(l1_users, na.rm = TRUE),
+  ) %>% 
+  left_join(egids_info, by = "egids") %>%
+  left_join(as_tibble(ISOcodes::ISO_639_3) %>% clean_names() %>% select(iso_639 = id, name2 = name), by = "iso_639") %>% 
+  mutate(egids = label) %>%
+  select(-label) %>% 
+  mutate(
+    unesco = factor(unesco, 
+                         levels = c("Safe", "Vulnerable", "Definitely Endangered", 
+                                    "Severely Endangered", "Critically Endangered", "Extinct"),
+                         ordered = TRUE),
+    egids = factor(egids, 
+                        levels = c("International", "National", "Regional", "Trade", 
+                                   "Educational", "Written", "Vigorous", "Threatened", 
+                                   "Shifting", "Moribund", "Nearly Extinct", "Dormant", "Extinct"),
+                        ordered = TRUE),
+    name = if_else(!is.na(name2), name2, name)
+    ) %>% 
+  select(-name2) %>% 
+  arrange(desc(egids), l1_users, all_users)
+
+# Calculate the total number of users
+total_users <- sum(df_pop$l1_users, na.rm = TRUE)
+
+# Add percentage column for 'all_users'
+df_pop <- 
+  df_pop %>%
+  mutate(l1_users_perc = (l1_users / total_users) * 100) %>% 
+  relocate(iso_639, name, family, l1_users, l1_users_perc, egids, description)
+```
+
+
+# Common Crawl data
+
+```{r}
+df_cc <- 
+  read_csv("https://commoncrawl.github.io/cc-crawl-statistics/plots/languages.csv") %>% 
+  filter(crawl == last(crawl), primary_language != "<unknown>") %>% 
+  mutate(total_pages = sum(pages, na.rm = TRUE)) %>% 
+  transmute(
+    iso_639 = primary_language,
+    iso_639 = if_else(iso_639 %in% c('nno'), 'nor', iso_639),
+    page_perc = (pages / total_pages) * 100
+  )
+```
+
+
+# Merging ans saving
+
+```{r}
+df_final <-
+  left_join(df_pop, df_cc, by = "iso_639") %>%
+  filter(l1_users > 0) %>% 
+  mutate(
+    page_perc = if_else(is.na(page_perc) | page_perc == 0, .Machine$double.eps, page_perc),
+    representation_score = log(page_perc/l1_users_perc)
+  ) %>% 
+  select(iso639 = iso_639, language = name, representation_score, family, region, primary_country = country, country_code) %>%
+  arrange(representation_score)
+
+df_final %>% clean_names(case = "title") %>% write_csv(here::here("data/df_clean.csv"))
+```
+
+
+# Map
+
+```{r}
+
+```
+
