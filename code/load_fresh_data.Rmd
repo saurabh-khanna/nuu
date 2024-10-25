@@ -167,7 +167,7 @@ df_final <-
     page_perc = if_else(is.na(page_perc) | page_perc == 0, .Machine$double.eps, page_perc),
     representation_score = log(page_perc/l1_users_perc)
   ) %>% 
-  select(iso639 = iso_639, language = name, representation_score, family, region, primary_country = country, country_code) %>%
+  select(iso639 = iso_639, language = name, representation_score, family, region, primary_country = country, country_code, lat, lon) %>%
   arrange(representation_score)
 
 df_final %>% clean_names(case = "title") %>% write_csv(here::here("data/df_clean.csv"))

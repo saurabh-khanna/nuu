@@ -1,2 +1,4 @@
 .Rproj.user
 data/dataverse_files
+*.Rproj
+code/
