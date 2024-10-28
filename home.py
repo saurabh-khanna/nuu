@@ -36,9 +36,9 @@ if on:
     TEXT = """
     The text you saw was from a randomly chosen extinct language. You just had a very small experience of how it feels when your language is invisible on the Internet.
 
-    The Internet is a very unfair representation of human linguistic diversity. `N|uu` is an attempt to make these stark inequalities visible by quantifying internet representation for all languages scripted by humans.
+    The Internet is a very unfair representation of human linguistic diversity. `N|uu` is an attempt to make these stark inequalities visible by quantifying online visibility for all languages scripted by humans.
 
-    Calculating representation scores now... 
+    Calculating visibility scores now... 
     """
     st.warning("**N|uu** is named after a nearly-extinct language with only [one living speaker left](https://youtu.be/WFH4h75X2j8?si=lnYAOr7zCGwA4H4e).")
     st.write_stream(stream_data)
@@ -46,6 +46,7 @@ if on:
 
     df = pd.read_csv("./data/df_clean.csv").drop(columns=['Iso639', 'Country Code', 'Primary Country'])
     df['Representation Score'] = df['Representation Score'].round(2)
+    df.rename({'Representation Score': 'Visibility'}, axis=1, inplace=True)
 
     # print the map
     # st.image("map.png")
