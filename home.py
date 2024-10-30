@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 import time
 import random
+import pydeck as pdk
+import re
 
 # Set up the Streamlit page configuration and hide the menu, footer, and header
-st.set_page_config(page_icon="📜", page_title="N|uu", layout="centered")
+st.set_page_config(page_icon="📜", page_title="Lost Without Translation", layout="wide")
 
 st.markdown(
     """
@@ -17,43 +19,75 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Function for streaming text
 def stream_data():
     for word in TEXT.split(" "):
         yield word + " "
         time.sleep(0.05)
 
-
-st.title("📜 N|uu")
+st.title("📜 Lost Without Translation")
 st.write("&nbsp;")
 
-st.sidebar.title("📜 N|uu")
+st.sidebar.title("📜 Lost Without Translation")
 st.sidebar.write("&nbsp;")
+placeholder = st.sidebar.empty()
 
-on = st.toggle("I want this text in English 👀")
+on = st.toggle("I want this text in English 😕")
 st.write("&nbsp;")
 
 if on:
+
+    placeholder.empty()
+    
     TEXT = """
     The text you saw was from a randomly chosen extinct language. You just had a very small experience of how it feels when your language is invisible on the Internet.
 
-    The Internet is a very unfair representation of human linguistic diversity. `N|uu` is an attempt to make these stark inequalities visible by quantifying online visibility for all languages scripted by humans.
+    The Internet is a very unfair representation of human linguistic diversity. `Lost Without Translation` is an attempt to make these stark inequalities visible by quantifying online visibility for all languages scripted by humans.
 
-    Calculating visibility scores now... 
+    Calculating visibility scores (range 0-100) now... 
     """
-    st.warning("**N|uu** is named after a nearly-extinct language with only [one living speaker left](https://youtu.be/WFH4h75X2j8?si=lnYAOr7zCGwA4H4e).")
     st.write_stream(stream_data)
     st.write("&nbsp;")
 
+    # Load and prepare data for the map
     df = pd.read_csv("./data/df_clean.csv").drop(columns=['Iso639', 'Country Code', 'Primary Country'])
-    df['Representation Score'] = df['Representation Score'].round(2)
-    df.rename({'Representation Score': 'Visibility'}, axis=1, inplace=True)
-
-    # print the map
-    # st.image("map.png")
-
-    # print the table
-    st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
+    df['Visibility'] = df['Visibility'].round(2)
+    df = df.dropna(subset=['Lat', 'Lon'])
+    df = df.rename(columns={'Lat': 'latitude', 'Lon': 'longitude'})
+    df['Langlabel'] = df['Language'].apply(lambda x: re.sub(r"<.*?>", "", x))
     
+    # Generate colors based on visibility
+    df['color'] = df['Visibility'].apply(lambda x: [255 - int(x * 2.55), int(x * 2.55), 0])
+
+    with st.container(border=True):
+        # Print the map with tooltips
+        st.pydeck_chart(pdk.Deck(
+            map_style="mapbox://styles/mapbox/light-v9",
+            initial_view_state=pdk.ViewState(
+                latitude=0,
+                longitude=0,
+                zoom=1.5,
+                pitch=50,
+            ),
+            layers=[
+                pdk.Layer(
+                    'ScatterplotLayer',
+                    data=df,
+                    get_position='[longitude, latitude]',
+                    get_radius=50000,
+                    get_color='color',
+                    stroke_color=[0, 0, 0], 
+                    fille=True,
+                    pickable=True,  # Enables tooltip display on hover
+                ),
+            ],
+            tooltip={"text": "Language: {Langlabel}\nVisibility: {Visibility}/100"}  # Tooltip text
+        ))
+
+    # Display the table without latitude and longitude columns
+    df = df.drop(columns=['latitude', 'longitude', 'color', 'Langlabel'])
+    st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
+
     st.sidebar.info("**Supported By** \n\n 🌱 Amsterdam School of Communication Research \n\n 🌱 Social and Behavioural Data Science Centre, University of Amsterdam \n\n Reach out to our [team](https://theinvisiblelab.org/team) for feedback and/or collaboration.")
 
 else:
@@ -71,3 +105,5 @@ else:
     TEXT = random.choice(extinct_langs)
 
     st.write_stream(stream_data)
+    placeholder.image("confused.gif")
+
