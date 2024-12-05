@@ -157,6 +157,22 @@ df_cc <-
 ```
 
 
+
+```{r, eval=FALSE}
+left_join(df_pop, df_cc, by = "iso_639") %>%
+  filter(l1_users > 0) %>% 
+  mutate(
+    page_perc = if_else(is.na(page_perc) | page_perc == 0, .Machine$double.eps, page_perc),
+    visibility = percent_rank(page_perc/l1_users_perc) * 100,
+    language = paste0("<a href='https://www.ethnologue.com/language/", iso_639, "' target='_blank'>", name, "</a>")
+  ) %>% 
+  # glimpse() %>% 
+  group_by(egids) %>% 
+  skim(visibility)
+```
+
+
+
 # Merging ans saving
 
 ```{r}
@@ -172,12 +188,5 @@ df_final <-
   arrange(visibility)
 
 df_final %>% clean_names(case = "title") %>% write_csv(here::here("data/df_clean.csv"))
-```
-
-
-# Map
-
-```{r}
-
 ```
 

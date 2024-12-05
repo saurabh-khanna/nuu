@@ -40,15 +40,68 @@ if on:
     placeholder.empty()
     
     TEXT = """
-    The text you saw was from a randomly chosen extinct language. You just had a very small experience of how it feels when your language is invisible on the Internet.
+    The text you saw was from a randomly chosen extinct language. You just had a very small experience of how it feels when your language is invisible on the internet.
 
-    The Internet is a very unfair representation of human linguistic diversity. `Lost Without Translation` is an attempt to make these stark inequalities visible by quantifying online visibility for all languages scripted by humans.
-
-    Calculating visibility scores (range 0-100) now... 
+    The internet is an extremely unfair representation of human linguistic diversity. **Lost Without Translation** is an attempt to make these stark inequalities visible by quantifying online visibility for all languages scripted by humans.
+    
+    Calculating visibility scores [range 0-100] for all languages now... 
     """
     st.write_stream(stream_data)
-    st.write("&nbsp;")
 
+    with st.expander("How are visibility scores calculated?"):
+        st.write(
+            """
+            We intend to assess the online visibility of all text-based human languages, considering both their human usage and their digital presence. By combining data from Ethnologue and Common Crawl, we can approximate the extent to which languages are represented on the web relative to their real-world usage.
+
+            **Data Sources**
+
+            - [Ethnologue](https://www.ethnologue.com/): Provides comprehensive information on more than 7000 living human languages, including the number of L1 (first language) speakers.
+            - [Common Crawl](https://commoncrawl.org/): A massive dataset of monthly web crawls, offering insights into the distribution of languages on the internet.
+
+            **Metric Definitions**
+
+            We define the *visibility* of a language $L$, denoted by $V_L$, as the percentile rank of its *visibility index*, $I_L$. 
+
+            The visibility index, $I_L$, in turn is calculated as follows:
+            """
+        )
+
+        st.latex(r'''I_L = \frac{P_L}{S_L}''')
+
+        st.write(
+            """
+            where $P_L$ is the proportion of web pages in Common Crawl written in language $L$, and $S_L$ is the proportion of human population that speaks language $L$ as their first language.
+
+            The percentile rank of each language's visibility index, $V_L$ is calculated as follows:
+            """
+        )
+
+        st.latex(r'''V_L = \frac{\text{Number of languages with } I_L' \leq I_L}{\text{Total number of languages}} \times 100''')
+        
+        st.write(
+            """
+            where $I_L'$ is the visibility index of another language.
+
+            A higher visibility score indicates that a language is more prominent online relative to its number of L1 speakers. This could suggest factors such as:
+
+            - Strong internet penetration in regions where the language is spoken
+            - Active online communities and digital content creation
+            - Government or institutional support for digital initiatives
+
+            Conversely, a lower score might imply:
+
+            - Limited internet access in language-speaking regions
+            - Lower digital literacy rates
+            - Lack of government or institutional support for digital initiatives
+
+            By quantifying the online visibility of languages, we can gain valuable insights into the digital divide and the potential challenges faced by language communities in the digital age. This metric can be used to inform language policy, digital inclusion initiatives, and research on language technology.
+
+            We are always looking for ways to improve our approach. Please reach out to [saurabh.khanna@uva.nl](mailto:saurabh.khanna@uva.nl) with feedback and/or questions.
+            """
+        )
+
+    st.write("&nbsp;")
+    
     # Load and prepare data for the map
     df = pd.read_csv("./data/df_clean.csv").drop(columns=['Iso639', 'Country Code', 'Primary Country'])
     df['Visibility'] = df['Visibility'].round(2)
